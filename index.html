@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>X-UniMotion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Add KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false}
+                ]
+            });
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #111;
+            color: #eee;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            position: relative;
+            background: none;
+            color: white;
+            text-align: center;
+            overflow: hidden;
+            width: 100%;
+            /* Maintain 16:9 aspect ratio for 1080p video */
+            aspect-ratio: 16 / 9;
+            min-height: 340px;
+        }
+        @supports not (aspect-ratio: 16/9) {
+            header {
+                height: 56.25vw; /* fallback for browsers without aspect-ratio */
+                min-height: 340px;
+                max-height: 980px;
+            }
+        }
+        .header-bg-video {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .header-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, rgba(0,0,0,0.7) 60%, rgba(0,0,0,0.3) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+        header > *:not(.header-bg-video):not(.header-overlay) {
+            position: relative;
+            z-index: 3;
+        }
+        .header-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 {
+            margin: 0;
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 24px rgba(0,0,0,0.5);
+        }
+        h2 {
+            color: #4f8cff;
+            margin-top: 2.5rem;
+            font-size: 2.2rem;
+        }
+        .authors {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .section {
+            margin-bottom: 3.5rem;
+        }
+        .video-explainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .video-explainer video, .video-explainer iframe {
+            width: 100%;
+            max-width: 600px;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        .results-category {
+            margin-bottom: 2rem;
+        }
+        .results-videos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .results-videos video, .results-videos iframe {
+            width: 280px;
+            height: 180px;
+            border-radius: 8px;
+            background: #eee;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 2.5rem auto;
+            background: #181818;
+            border-radius: 16px;
+            box-shadow: 0 4px 32px rgba(0,0,0,0.25);
+            padding: 3rem 4rem;
+            box-sizing: border-box;
+            /* Allow overflow for carousels */
+            overflow-x: visible;
+        }
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 98vw;
+                padding: 2rem 1.2rem;
+            }
+        }
+        @media (max-width: 700px) {
+            .container {
+                padding: 1rem 0.5rem;
+            }
+            h2 {
+                font-size: 1.3rem;
+            }
+            .results-videos {
+                flex-direction: column;
+                align-items: center;
+            }
+            .results-videos video, .results-videos iframe {
+                width: 100%;
+                height: auto;
+            }
+        }
+        .footer {
+            text-align: center;
+            color: #888;
+            font-size: 0.95rem;
+            margin: 2rem 0 1rem 0;
+        }
+        a {
+            color: #4f8cff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .results-carousel {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto 2rem auto;
+            perspective: 1200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            overflow-y: hidden;
+            height: auto; /* Let the height be flexible */
+        }
+        .carousel-cards {
+            display: flex;
+            align-items: center;
+            height: 100%;
+            min-width: 100%;
+            transition: transform 0.5s cubic-bezier(.4,2,.6,1);
+            cursor: grab;
+            will-change: transform;
+        }
+        .carousel-card {
+            flex: 0 0 70%;
+            max-width: 70%;
+            height: auto;
+            background: #23272f;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        .carousel-card video {
+            max-height: 360px;
+            min-height: 240px; /* Ensures controls always have room */
+            width: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            background-color: #000;
+            z-index: 1;
+            position: relative;
+        }
+        .video-wrapper-wide {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .video-wrapper-wide video {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .video-wrapper-tall {
+            height: 360px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .video-wrapper-tall video {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+            background: #000;
+        }
+        .carousel-card video, .carousel-card iframe {
+            max-height: 360px;   /* Same height for all previews */
+            height: auto;
+            width: auto;
+            object-fit: contain;
+            border-radius: 12px;
+            background: #23272f;
+        }
+        .carousel-card.center {
+            opacity: 1;
+            z-index: 3;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+            background: #23272f;
+            transform: scale(1.05);
+            pointer-events: auto;
+        }
+        .carousel-card.left,
+        .carousel-card.right {
+            opacity: 0.7;
+            z-index: 2;
+            transform: scale(1.0);
+        }
+        .carousel-card:not(.center):not(.left):not(.right) {
+            opacity: 0.2;
+            pointer-events: none;
+            transform: scale(1.0);
+        }
+        @media (max-width: 1500px) {
+            .results-carousel {
+                max-width: 98vw;
+                height: calc(49vw * 9 / 16);
+            }
+            .carousel-card, .carousel-card.center {
+                flex: 0 0 49vw;
+                max-width: 49vw;
+                width: 49vw;
+                height: calc(49vw * 9 / 16);
+            }
+        }
+        @media (max-width: 900px) {
+            .results-carousel {
+                max-width: 98vw;
+                height: calc(98vw * 9 / 16);
+            }
+            .carousel-card, .carousel-card.center {
+                flex: 0 0 98vw;
+                max-width: 98vw;
+                width: 98vw;
+                height: calc(98vw * 9 / 16);
+            }
+        }
+        .carousel-arrows {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 98%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+            transform: translateY(-50%);
+            padding: 0 10px;
+        }
+        .carousel-arrow {
+            pointer-events: auto;
+            background: #fff;
+            color: #4f8cff;
+            border: 2px solid #4f8cff;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            transition: background 0.2s, color 0.2s, border 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 11;
+        }
+        .carousel-arrow:hover {
+            background: #4f8cff;
+            color: #fff;
+            border: 2px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <video class="header-bg-video" autoplay loop muted playsinline>
+            <source src="x_unimotion_assets/title_h264.mp4" type="video/mp4">
+        </video>
+        <div class="header-overlay"></div>
+        <div class="header-content">
+            <h1>X-UniMotion: Animating Human Images with</h1>
+            <h1>Expressive, Unified and Identity-Agnostic Motion Latents</h1>
+            <h3>  <a href="https://guoxiansong.github.io/homepage/index.html">Guoxian Song</a>, <a href="https://hongyixu37.github.io/homepage/">Hongyi Xu</a>, <a href="https://xiaochen-zhao.netlify.app/">Xiaochen Zhao</a>, <a href="https://youxie.github.io/">You Xie</a>, <a href="https://gutianpei.github.io/">Tianpei Gu</a>, <a href="https://lizenan.github.io/">Zenan Li</a>, <a href="https://zhangchenxu528.github.io/">Chenxu Zhang</a>, <a href="https://linjieluo.github.io/">Linjie Luo</a> </h3>
+            <h3>ByteDance Inc</h3>
+        </div>
+    </header>
+    <div class="container">
+        <div class="section">
+            <h2>Pipeline</h2>
+            <div style="display: flex; justify-content: center;">
+                <!-- Replace the src with your own video or YouTube embed -->
+                <img src="x_unimotion_assets/x_body_overview.png" style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+            </div>
+            <p>X-UniMotion features an end-to-end training framework that jointly learns an implicit latent representation of full-body human motion and synthesizes lifelike videos using a DiT network. At its core, we employ an image encoder $\mathcal{E}$ to extract a 1D latent motion descriptor $z$ from the driving image $I_D$, capturing full-body articulation. This global motion code is complemented by decoupled local descriptors—$z_{lh}$ and $z_{rh}$ for the left and right hands, and $z_f$ for facial expressions—extracted from local patches corresponding to the hands and face via $\mathcal{E}_h$ and $\mathcal{E}_f$ respectively. To achieve identity-agnostic motion representation, we apply spatial and color augmentations that effectively disentangle identity cues from the motion latents. These motion tokens are retargeted to the reference subject's body structure in $I_S$ via a ViT decoder $\mathcal{D}$, which outputs identity-aligned spatial motion guidance. This guidance is concatenated with noised video latents and, together with the reference image latents, provided as input to the DiT model. The facial motion latent $z_f$ is further injected into the DiT network via cross-attention layers to control expressions. To supervise motion encoding, we apply dual decoding $\mathcal{D}_h$ and $\mathcal{D}_n$ on the intermediate motion features, predicting both joint heatmaps and hand normal maps. During inference, latent motion codes are directly extracted from each frame of the driving video, enabling expressive and photorealistic animations that maintain strong identity resemblance to the reference image.</p>
+        </div>
+        
+        <div class="section">
+            <h2>Results</h2>
+            <div class="results-category">
+                <h3>Results Gallery</h3>We provided more results of X-UniMotion. (Double click the video to zoom in for better quality)
+                </p>
+                <div class="video-gallery" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;">
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_01.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_02.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_03.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_04.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_05.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_06.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_07.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_08.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_09.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                    <div class="video-item" style="flex: 1 1 100%; max-width: 1080px;">
+                        <video controls style="width: 100%; border-radius: 16px; background: #23272f; box-shadow: 0 8px 32px rgba(0,0,0,0.25);">
+                            <source src="x_unimotion_assets/gallery_10.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                </div>
+            </div>
+            <div class="results-category">
+                <h3>Appearance and Motion Disentanglement (First column is driving video)</h3>X-UniMotion extracts compact, unified, expressive, and depth-aware latent representations for whole-body human motion that is disentangled from identity, capturing complex body and hand articulations, and fine-grained facial expressions.
+                </p>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_01.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_02.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_03.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_04.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_05.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <video controls style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/appearance_06.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+            <h3>Diversity</h3>We show that X-UniMotion can generate diverse motions for varity of reference images.
+            </p>
+            <!-- Second Carousel -->
+            <div class="results-carousel">
+                <div class="carousel-cards">
+                    <div class="carousel-card"><div class="video-wrapper-tall"><video controls><source src="x_unimotion_assets/diversity_02.mp4" type="video/mp4"></video></div></div>
+                    <div class="carousel-card"><div class="video-wrapper-tall"><video controls><source src="x_unimotion_assets/diversity_03.mp4" type="video/mp4"></video></div></div>
+                    <div class="carousel-card"><div class="video-wrapper-tall"><video controls><source src="x_unimotion_assets/diversity_04.mp4" type="video/mp4"></video></div></div>
+                    <div class="carousel-card"><div class="video-wrapper-tall"><video controls><source src="x_unimotion_assets/diversity_06.mp4" type="video/mp4"></video></div></div>
+                    <div class="carousel-card"><div class="video-wrapper-tall"><video controls><source src="x_unimotion_assets/diversity_07.mp4" type="video/mp4"></video></div></div>
+
+                </div>
+                <div class="carousel-arrows">
+                    <button class="carousel-arrow left" aria-label="Previous">&#8592;</button>
+                    <button class="carousel-arrow right" aria-label="Next">&#8594;</button>
+                </div>
+            </div>
+
+            <div class="results-category">
+                <h3>Motion Generation</h3>Our latent motion descriptor serves as a unified representation for motion generation via continuous motion prediction. It conditioned
+                    on the preceding 9 frame and generate the rest frames.
+                </p>
+                <div style="display: flex; justify-content: center;">
+                    <video controls  style="width:360px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/uncond.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+            <div class="results-category">
+                <h3>Comparison to State-of-the-Art Methods</h3>
+                <div style="display: flex; justify-content: center;">
+                    <video controls  style="width:1080px; border-radius:16px; background:#23272f; box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+                        <source src="x_unimotion_assets/comparison_02.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+
+            </div>
+            <div class="results-category">
+                <h2>Ethics</h2>
+                <div style="margin: 0 auto; font-size: 1.1rem; color: #ccc; background: #23272f; border-radius: 10px; padding: 1.5rem 2rem;">
+                    Our research presents advanced generative AI capabilities for human video synthesis. We firmly oppose the misuse of our technology for generating manipulated content of real individuals. While our model enables the creation and editing of photorealistic digital humans, we strongly condemn any application aimed at spreading misinformation, damaging reputations, or creating deceptive content. We acknowledge the ethical considerations surrounding this technology and are committed to responsible development and deployment that prioritizes transparency and prevents harmful applications. The images and videos used in these demos are from public sources or generated by models, and are solely used to demonstrate the capabilities of this research work. If there are any concerns, please contact us (ur email) and we will delete it in time.
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Card carousel logic: no overlap, half cards visible, drag/swipe
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.results-carousel').forEach(function(carousel) {
+                const cards = Array.from(carousel.querySelectorAll('.carousel-card'));
+                const wrapper = carousel.querySelector('.carousel-cards');
+                // Set current to the middle card
+                let current = Math.floor(cards.length / 2);
+                let startX = 0;
+                let isDragging = false;
+                let deltaX = 0;
+
+                function update() {
+                    // Set classes for center, left, right, and arrange cards in a cycle
+                    cards.forEach((card, i) => {
+                        card.classList.remove('left', 'center', 'right');
+                        if (i === current) {
+                            card.classList.add('center');
+                        } else if (i === (current - 1 + cards.length) % cards.length) {
+                            card.classList.add('left');
+                        } else if (i === (current + 1) % cards.length) {
+                            card.classList.add('right');
+                        }
+                    });
+                    // Move the wrapper so the center card is always in the middle
+                    const cardWidth = cards[0].offsetWidth;
+                    const carouselWidth = wrapper.parentElement.offsetWidth;
+                    // Center the current card in the carousel
+                    wrapper.style.transform = `translateX(${(carouselWidth / 2) - ((current + 0.5) * cardWidth)}px)`;
+                }
+
+                function slideTo(dir) {
+                    if (dir === 'left') {
+                        current = (current - 1 + cards.length) % cards.length;
+                    } else if (dir === 'right') {
+                        current = (current + 1) % cards.length;
+                    }
+                    update();
+                }
+
+                // Mouse/touch drag support
+                wrapper.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    startX = e.clientX;
+                    deltaX = 0;
+                    wrapper.style.cursor = 'grabbing';
+                });
+                window.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    deltaX = e.clientX - startX;
+                });
+                window.addEventListener('mouseup', (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    wrapper.style.cursor = 'grab';
+                    if (deltaX > 60) {
+                        slideTo('left');
+                    } else if (deltaX < -60) {
+                        slideTo('right');
+                    }
+                    deltaX = 0;
+                });
+                // Touch support
+                wrapper.addEventListener('touchstart', (e) => {
+                    isDragging = true;
+                    startX = e.touches[0].clientX;
+                    deltaX = 0;
+                });
+                wrapper.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    deltaX = e.touches[0].clientX - startX;
+                });
+                wrapper.addEventListener('touchend', (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    if (deltaX > 60) {
+                        slideTo('left');
+                    } else if (deltaX < -60) {
+                        slideTo('right');
+                    }
+                    deltaX = 0;
+                });
+
+                // Add event listeners for arrow buttons
+                const leftArrow = carousel.querySelector('.carousel-arrow.left');
+                const rightArrow = carousel.querySelector('.carousel-arrow.right');
+                if (leftArrow) {
+                    leftArrow.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        slideTo('left');
+                    });
+                }
+                if (rightArrow) {
+                    rightArrow.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        slideTo('right');
+                    });
+                }
+
+                update();
+                window.addEventListener('resize', update);
+            });
+        });
+    </script>
+</body>
+</html>
