@@ -329,10 +329,24 @@
             color: #fff;
             border: 2px solid #fff;
         }
+
+        .navbar-dropdown {
+            background-color: #000 !important;
+            border: none;
+        }
+        
+        .navbar-dropdown .navbar-item {
+            color: #eee !important;
+        }
+        
+        .navbar-dropdown .navbar-item:hover {
+            background-color: #1a1a1a !important;
+            color: #4f8cff !important;
+        }
     </style>
 </head>
 <body>
-<nav class="navbar" role="navigation" aria-label="main navigation">
+<nav class="navbar is-black" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
             <span aria-hidden="true"></span>
@@ -369,35 +383,6 @@
 
     </div>
   </nav>
-    <nav class="navbar is-black" role="navigation" aria-label="main navigation">
-        <div class="navbar-menu">
-            <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
-    
-                <div class="navbar-item has-dropdown is-hoverable">
-                    <a class="navbar-link">
-                        More Research
-                    </a>
-                    <div class="navbar-dropdown">
-                        <a class="navbar-item" href="https://byteaigc.github.io/X-Actor/">
-                            X-Actor
-                        </a>
-                        <a class="navbar-item" href="https://zeyuan-chen.com/X-Dancer/">
-                            X-Dancer
-                        </a>
-                        <a class="navbar-item" href="https://x-dyna.github.io/xdyna.github.io/">
-                            X-Dyna
-                        </a>
-                        <a class="navbar-item" href="https://byteaigc.github.io/X-Portrait2/">
-                            X-NeMo (X-Portrait2)
-                        </a>
-                        <a class="navbar-item" href="https://byteaigc.github.io/x-portrait/">
-                            X-Portrait
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </nav>
     <header>
         <video class="header-bg-video" autoplay loop muted playsinline>
             <source src="x_unimotion_assets/title_h264.mp4" type="video/mp4">
